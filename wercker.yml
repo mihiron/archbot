@@ -1,0 +1,21 @@
+box: wercker/default
+
+build:
+  steps:
+    - script:
+        name: empty
+        code: echo 1
+
+deploy:
+  steps:
+    - add-to-known_hosts:
+        hostname: $SSH_HOST
+        fingerprint: $SSH_HOST_FINGERPRINT
+    - add-ssh-key:
+        keyname: WERCKER_SSH_KEY
+    - script:
+        name: restart hubot
+        code: ssh hubot@$SSH_HOST "export HUBOT_SLACK_TOKEN=$HUBOT_SLACK_TOKEN && cd $HUBOT_DIR && git pull origin $WERCKER_GIT_BRANCH && npm install && ndenv exec node ~/node_modules/.bin/pm2 start -f bin/hubot -x --name hubot -- -a slack -n archbot"
+  after-steps:
+    - wantedly/pretty-slack-notify:
+        webhook_url: $SLACK_WEBHOOK_URL
